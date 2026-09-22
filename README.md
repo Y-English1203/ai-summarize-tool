@@ -1,13 +1,24 @@
-## 项目演示
-![AI对话助手演示](demo.png)
+# 我的AI学习项目集
 
 ## 项目列表
-1. 智能文档摘要工具 (summarize.py)
-2. 智能问答机器人 (chat_bot.py)
-3. Web智能对话应用 (app.py) - 基于Streamlit的网页版AI对话
-4. 私有文档AI助手 V2 (rag_app_v2.py) - 基于向量检索的RAG系统（使用HuggingFace本地模型，支持离线运行）
+1. **Agentic RAG 私有知识库助手** (agent_rag.py) - 基于 Function Calling 的自主检索 Agent，能判断是否查文档，带页码引用，支持离线运行
+2. **私有文档AI助手 V2** (rag_app_v2.py) - 基于向量检索的 RAG 系统，ChromaDB + HuggingFace 本地模型，完全离线
+3. **Web智能对话应用** (app.py) - 基于 Streamlit 的网页版 AI 对话
+4. **智能问答机器人** (chat_bot.py) - 调用 DeepSeek API 实现对话
+5. **智能文档摘要工具** (summarize.py) - 纯 Python 实现文本摘要
 
+## 项目演示
+![Agentic RAG 演示](demo_agent.png)
 ![RAG V3 最终版演示](rag_demo_v3.png)
+![AI对话助手演示](demo.png)
+
+## 技术栈
+Python、Streamlit、LangChain、ChromaDB、HuggingFace（bge-small-zh-v1.5）、DeepSeek API、Function Calling、PyPDF、python-dotenv、Git
+
+## 运行方式
+```bash
+pip install -r requirements.txt
+streamlit run agent_rag.py
 ---
 
 # 智能文档摘要工具

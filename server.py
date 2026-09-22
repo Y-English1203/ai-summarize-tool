@@ -18,7 +18,9 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")
 
 app = FastAPI()
-
+# 存储对话历史，key 是 session_id，value 是消息列表
+conversation_history = {}
+MAX_HISTORY = 10  # 每个会话最多保留10轮对话
 
 def load_vectorstore():
     reader = PdfReader("test.pdf")
@@ -42,7 +44,7 @@ retriever = HybridRetriever(vectorstore)
 
 class Question(BaseModel):
     question: str
-
+    session_id: str = "default" 
 # 3. RAG 检索接口（混合检索）
 @app.post("/ask")
 def ask(q: Question):
@@ -88,7 +90,23 @@ def ask_data(q: Question):
 # 6. Agent 自动路由接口
 @app.post("/ask/auto")
 def ask_auto(q: Question):
-    # 让大模型决定走文档还是数据
+    """Agent 自动路由 + 多轮对话记忆 + 澄清机制"""
+    session_id = q.session_id
+
+    # 1. 获取历史
+    if session_id not in conversation_history:
+        conversation_history[session_id] = []
+    history = conversation_history[session_id]
+
+    # 2. 澄清机制：如果问题含模糊指代且无历史，主动反问
+    ambiguous_words = ["它", "这个", "那个", "上面说的", "刚刚的"]
+    if any(w in q.question for w in ambiguous_words) and len(history) == 0:
+        return {
+            "route": "clarify",
+            "answer": "请问您指的是什么？可以补充一下具体对象吗？"
+        }
+
+    # 3. 后续路由逻辑不变
     route_response = client.chat.completions.create(
         model="deepseek-chat",
         messages=[{
@@ -101,15 +119,26 @@ def ask_auto(q: Question):
 
     if "数据" in route:
         answer = text2sql(q.question)
-        return {"route": "text2sql", "answer": answer}
+        route_name = "text2sql"
     else:
         docs = retriever.retrieve(q.question, top_k=5)
         context = "\n\n".join(docs)
+        messages = [
+            {"role": "system", "content": f"请严格根据以下文档内容回答问题。\n\n文档内容：\n{context}"}
+        ]
+        messages.extend(history[-MAX_HISTORY:])
+        messages.append({"role": "user", "content": q.question})
         response = client.chat.completions.create(
             model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": f"请严格根据以下文档内容回答问题。\n\n文档内容：\n{context}"},
-                {"role": "user", "content": q.question}
-            ]
+            messages=messages
         )
-        return {"route": "rag", "answer": response.choices[0].message.content}
+        answer = response.choices[0].message.content
+        route_name = "rag"
+
+    # 4. 存入历史
+    history.append({"role": "user", "content": q.question})
+    history.append({"role": "assistant", "content": answer})
+    if len(history) > MAX_HISTORY * 2:
+        conversation_history[session_id] = history[-MAX_HISTORY * 2:]
+
+    return {"route": route_name, "answer": answer, "history_length": len(history) // 2}

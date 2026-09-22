@@ -26,7 +26,7 @@ Python、Streamlit、LangGraph、LangChain、ChromaDB、HuggingFace (bge-small-z
 - **真实踩坑记录**：解决了 API 欠费、SSL 证书、编码乱码、检索遗漏（4.2 内容）、Streamlit 与 PyTorch 环境冲突等问题。
 - **混合检索**：BM25 关键词召回 + 向量语义召回，通过 RRF（Reciprocal Rank Fusion） 融合两路结果，再经 Reranker（bge-reranker-base） 精排，解决单一向量检索在专有名词、数字等场景下的召回不足问题。
 - **多工具 Agent路由** ：基于 LangGraph 的意图识别节点，自动判断用户问题类型。文档问题走 RAG 检索（混合检索 + Reranker 精排，带页码引用），数据统计问题走 Text-to-SQL（自动生成 SQL 查询 SQLite 数据库），实现“一问多能”的企业级 Agent 系统。
-
+- **澄清机制** ：当问题含模糊指代且无历史时，Agent 主动反问，避免强行检索造成错误回答。
 ## 评估结果与分析
 构建了包含5个场景的自动化评估集（`eval_set.json`），通过 `evaluate.py` 实现批量测试与命中率统计，**当前检索命中率达 80%**。
 

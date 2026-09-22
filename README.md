@@ -24,6 +24,7 @@ Python、Streamlit、LangGraph、LangChain、ChromaDB、HuggingFace (bge-small-z
 - **Docker 容器化部署**：编写 Dockerfile，实现一键启动、环境隔离、跨平台运行。
 - **完全离线运行**：使用 HuggingFace 本地嵌入模型，配合 `HF_ENDPOINT` 国内镜像，无需联网且保护隐私。
 - **真实踩坑记录**：解决了 API 欠费、SSL 证书、编码乱码、检索遗漏（4.2 内容）、Streamlit 与 PyTorch 环境冲突等问题。
+- **混合检索**：BM25 关键词召回 + 向量语义召回，通过 RRF（Reciprocal Rank Fusion） 融合两路结果，再经 Reranker（bge-reranker-base） 精排，解决单一向量检索在专有名词、数字等场景下的召回不足问题。
 
 ## 评估结果与分析
 构建了包含5个场景的自动化评估集（`eval_set.json`），通过 `evaluate.py` 实现批量测试与命中率统计，**当前检索命中率达 80%**。

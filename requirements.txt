@@ -12,3 +12,4 @@ python-dotenv
 streamlit
 sentence-transformers
 requests
+rank_bm25

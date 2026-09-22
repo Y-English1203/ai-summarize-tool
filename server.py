@@ -45,6 +45,9 @@ def load_vectorstore():
     return Chroma.from_documents(chunks, embeddings)
 
 vectorstore = load_vectorstore()
+from hybrid_retriever import HybridRetriever
+retriever = HybridRetriever(vectorstore)
+print("混合检索器初始化完成")
 print("向量库加载完成")
 class Question(BaseModel):
     question: str
@@ -54,7 +57,21 @@ app = FastAPI()
 async def ask_stream(q: Question):
     """SSE 流式输出接口"""
     # 第一步：先做检索（这部分很快，不需要流式）
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
+@app.post("/ask")
+def ask(q: Question):
+    # 使用混合检索替换单一的向量检索
+    docs = retriever.retrieve(q.question, top_k=5)
+
+    context = "\n\n".join(docs)
+
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": f"请严格根据以下文档内容回答问题。\n\n文档内容：\n{context}"},
+            {"role": "user", "content": q.question}
+        ]
+    )
+    return {"answer": response.choices[0].message.content}
     docs = retriever.invoke(q.question)
     
     context_parts = []

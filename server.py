@@ -1,3 +1,4 @@
+from fastapi.responses import StreamingResponse
 import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_HUB_OFFLINE"] = "1" 
@@ -9,12 +10,21 @@ from langchain_chroma import Chroma
 from fastapi import FastAPI
 from pydantic import BaseModel
 from agent_rag_v2 import agent, AgentState
+from openai import OpenAI
+from dotenv import load_dotenv
 
 
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_HUB_OFFLINE"] = "1"
 load_dotenv()
 
+
+load_dotenv()
+# 在 server.py 里独立初始化一个 client
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url="https://api.deepseek.com"
+)
 # ====== 启动时自动加载 PDF ======
 def load_vectorstore():
     from pypdf import PdfReader
@@ -36,12 +46,44 @@ def load_vectorstore():
 
 vectorstore = load_vectorstore()
 print("向量库加载完成")
-
-
-app = FastAPI()
-
 class Question(BaseModel):
     question: str
+
+app = FastAPI()
+@app.post("/ask/stream")
+async def ask_stream(q: Question):
+    """SSE 流式输出接口"""
+    # 第一步：先做检索（这部分很快，不需要流式）
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
+    docs = retriever.invoke(q.question)
+    
+    context_parts = []
+    for doc in docs:
+        page = doc.metadata.get('page', '未知')
+        if isinstance(page, int):
+            page = page + 1
+        context_parts.append(f"[第{page}页] {doc.page_content}")
+    context = "\n\n".join(context_parts)
+    
+    # 第二步：流式生成回答
+    async def event_generator():
+        stream = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": f"请严格根据以下文档回答，末尾标注引用页码。\n\n文档内容：\n{context}"},
+                {"role": "user", "content": q.question}
+            ],
+            stream=True
+        )
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                # SSE 格式：data: 内容\n\n
+                yield f"data: {content}\n\n"
+        yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 @app.post("/ask")
 def ask(q: Question):

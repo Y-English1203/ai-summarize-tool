@@ -22,3 +22,6 @@ Python、Streamlit、LangGraph、LangChain、ChromaDB、HuggingFace (bge-small-z
 1. 安装依赖：
    ```bash
    pip install -r requirements.txt
+   # 启动 FastAPI 服务
+uvicorn server:app --reload
+# 浏览器打开 http://127.0.0.1:8000/docs 进行接口测试

@@ -37,11 +37,11 @@ Python、Streamlit、LangGraph、LangChain、ChromaDB、HuggingFace (bge-small-z
 pip install -r requirements.txt
 # 启动 FastAPI 服务
 uvicorn server:app --port 8000
-# 浏览器打开 http://127.0.0.1:8000/docs 进行接口测试
+# 浏览器打开 http://127.0.0.1:8000/docs 进行接口测试```
 
 ### 方式二：Docker 部署（推荐，一键启动）
 ```bash
 # 构建镜像
 docker build -t rag-api .
 # 运行容器（需确保当前目录有 test.pdf 和 .env 文件）
-docker run -p 8000:8000 --env-file .env -v "%cd%/test.pdf:/app/test.pdf" -v "%USERPROFILE%/.cache/huggingface:/root/.cache/huggingface" rag-api
+docker run -p 8000:8000 --env-file .env -v "%cd%/test.pdf:/app/test.pdf" -v "%USERPROFILE%/.cache/huggingface:/root/.cache/huggingface" rag-api```

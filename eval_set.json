@@ -1,0 +1,7 @@
+[
+  {"question": "大学生焦虑心理的应对策略有哪些？", "expected_keywords": ["社会", "家庭", "自身", "自我调适"]},
+  {"question": "文档中提到的社会重要性是什么？", "expected_keywords": ["学习效果", "幸福感", "社会稳定"]},
+  {"question": "如何提高心理承受能力？", "expected_keywords": ["正确态度", "科学方法", "自我调适"]},
+  {"question": "文档里有没有提到量子计算？", "expected_keywords": ["未提及"]},
+  {"question": "大学生焦虑的来源有哪些？", "expected_keywords": ["学业", "社交", "职业"]}
+]
